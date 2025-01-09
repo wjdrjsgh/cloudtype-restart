@@ -24,4 +24,29 @@ jobs:
       # Chrome 및 ChromeDriver 설치
       - name: Install Specific Chrome and ChromeDriver
         run: |
-          
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          # 특정 버전의 Chrome 설치 (114.0.5735.90)
+          wget -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_114.0.5735.90-1_amd64.deb -O google-chrome-stable.deb
+          sudo dpkg -i google-chrome-stable.deb || sudo apt-get -f install -y
+          # ChromeDriver 설치 (114.0.5735.90)
+          wget -q "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip"
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          rm google-chrome-stable.deb chromedriver_linux64.zip
+
+      # Chrome 및 ChromeDriver 디버깅 (옵션)
+      - name: Debug Chrome and ChromeDriver
+        run: |
+          google-chrome --version
+          chromedriver --version
+
+      # Selenium 스크립트 실행
+      - name: Restart Cloudtype Server
+        env:
+          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+          GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
+        run: |
+          python <<EOF
+          # Selenium 스크립트 삽입
+          EOF
