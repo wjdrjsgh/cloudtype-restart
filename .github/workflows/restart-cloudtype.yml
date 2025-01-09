@@ -37,61 +37,7 @@ jobs:
         env:
           GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
           GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
-          PROJECT_URL: "https://app.cloudtype.io/@hoding1023/youtubecloud:main/youtubesummarizer"
         run: |
           python <<EOF
-          from selenium import webdriver
-          from selenium.webdriver.common.by import By
-          from selenium.webdriver.common.keys import Keys
-          from selenium.webdriver.chrome.options import Options
-          import time
-
-          # Chrome Headless 모드 설정
-          chrome_options = Options()
-          chrome_options.add_argument("--headless")
-          chrome_options.add_argument("--no-sandbox")
-          chrome_options.add_argument("--disable-dev-shm-usage")
-
-          # WebDriver 설정
-          driver = webdriver.Chrome(options=chrome_options)
-
-          # Cloudtype 로그인 페이지 열기
-          driver.get("https://app.cloudtype.io/login")
-          time.sleep(3)
-
-          # GitHub 로그인 처리
-          github_login_button = driver.find_element(By.XPATH, "//button[contains(text(), 'GitHub로 로그인')]")
-          github_login_button.click()
-          time.sleep(3)
-
-          # GitHub 로그인 입력
-          driver.find_element(By.ID, "login_field").send_keys("${{ secrets.GIT_USERNAME }}")  # GitHub ID
-          driver.find_element(By.ID, "password").send_keys("${{ secrets.GIT_PASSWORD }}")  # GitHub Password
-          driver.find_element(By.NAME, "commit").click()
-          time.sleep(5)
-
-          # Cloudtype 프로젝트 페이지로 이동
-          driver.get("${{ env.PROJECT_URL }}")
-          time.sleep(5)
-
-          # 정지 버튼 클릭
-          try:
-              stop_button = driver.find_element(By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[2]")
-              stop_button.click()
-              print("서버 정지 완료")
-              time.sleep(3)
-          except Exception as e:
-              print("서버 정지 실패:", e)
-
-          # 시작 버튼 클릭
-          try:
-              start_button = driver.find_element(By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[1]")
-              start_button.click()
-              print("서버 시작 완료")
-              time.sleep(3)
-          except Exception as e:
-              print("서버 시작 실패:", e)
-
-          # 브라우저 종료
-          driver.quit()
+          # 위에서 작성한 Selenium 코드 복사
           EOF
