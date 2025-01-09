@@ -26,11 +26,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
+          # Chrome 설치
           wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-          wget -q https://chromedriver.storage.googleapis.com/$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          # ChromeDriver 설치 (Chrome 버전에 맞춤)
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
+          wget -q "https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0/chromedriver_linux64.zip"
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
+
+      # Chrome 및 ChromeDriver 디버깅 (옵션)
+      - name: Debug Chrome and ChromeDriver
+        run: |
+          google-chrome --version
+          chromedriver --version
 
       # Selenium 스크립트 실행
       - name: Restart Cloudtype Server
@@ -39,6 +48,7 @@ jobs:
           GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
         run: |
           python <<EOF
+          # Selenium 스크립트 삽입
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
           from selenium.webdriver.support import expected_conditions as EC
