@@ -39,5 +39,57 @@ jobs:
           GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
         run: |
           python <<EOF
-          # 위에서 작성한 Selenium 코드 복사
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          from selenium import webdriver
+          import time
+
+          # Chrome 옵션 설정
+          chrome_options = Options()
+          chrome_options.add_argument("--headless")
+          chrome_options.add_argument("--no-sandbox")
+          chrome_options.add_argument("--disable-dev-shm-usage")
+
+          # WebDriver 설정
+          driver = webdriver.Chrome(options=chrome_options)
+
+          try:
+              # GitHub 로그인
+              driver.get("https://github.com/login")
+              WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "//*[@id='login_field']"))).send_keys("${{ secrets.GIT_USERNAME }}")
+              WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "//*[@id='password']"))).send_keys("${{ secrets.GIT_PASSWORD }}")
+              WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='login']/div[3]/form/div/input[13]"))).click()
+              print("GitHub 로그인 완료")
+              time.sleep(5)
+
+              # Cloudtype 로그인
+              driver.get("https://app.cloudtype.io/auth/signin?redirect=/")
+              WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='page']/div/div[1]/div/div[2]/div/div[2]/div[1]/a[1]"))).click()
+              print("Cloudtype GitHub 로그인 버튼 클릭")
+              time.sleep(10)
+
+              # Cloudtype 대시보드 확인
+              driver.get("https://app.cloudtype.io/@hoding1023/youtubecloud:main/youtubesummarizer")
+              WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "//*[@id='user-profile-dropdown']")))
+              print("Cloudtype 로그인 성공")
+
+              # 정지 버튼 클릭
+              stop_button = WebDriverWait(driver, 20).until(
+                  EC.element_to_be_clickable((By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[2]"))
+              )
+              stop_button.click()
+              print("서버 정지 완료")
+
+              # 시작 버튼 클릭
+              start_button = WebDriverWait(driver, 20).until(
+                  EC.element_to_be_clickable((By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[1]"))
+              )
+              start_button.click()
+              print("서버 시작 완료")
+          except Exception as e:
+              print("오류 발생:", e)
+          finally:
+              driver.quit()
           EOF
