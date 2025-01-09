@@ -22,34 +22,6 @@ jobs:
           pip install selenium
 
       # Chrome 및 ChromeDriver 설치
-      - name: Install Chrome and ChromeDriver
+      - name: Install Specific Chrome and ChromeDriver
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
-          echo "Detected Chrome version: $CHROME_VERSION"
-          wget -q "https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0.0/chromedriver_linux64.zip" -O chromedriver.zip || {
-            echo "Failed to download ChromeDriver for Chrome version $CHROME_VERSION"
-            exit 1
-          }
-          unzip chromedriver.zip
-          sudo mv chromedriver /usr/local/bin/
-          rm chromedriver.zip
-
-      # Chrome 및 ChromeDriver 디버깅
-      - name: Debug Chrome and ChromeDriver
-        run: |
-          google-chrome --version
-          chromedriver --version
-
-      # Selenium 스크립트 실행
-      - name: Restart Cloudtype Server
-        env:
-          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
-          GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
-        run: |
-          python <<EOF
-          # Selenium 스크립트 삽입
-          EOF
+          
