@@ -35,14 +35,6 @@ jobs:
           sudo mv chromedriver /usr/local/bin/
           rm google-chrome-stable.deb chromedriver_linux64.zip
 
-      # Chrome 및 ChromeDriver 디버깅
-      - name: Debug Chrome Installation
-        run: |
-          echo "Chrome 버전 확인:"
-          google-chrome --version || echo "Chrome 설치 실패"
-          echo "ChromeDriver 버전 확인:"
-          chromedriver --version || echo "ChromeDriver 설치 실패"
-
       # Selenium 스크립트 실행
       - name: Execute Python Script
         env:
