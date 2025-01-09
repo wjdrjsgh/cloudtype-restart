@@ -28,18 +28,20 @@ jobs:
           sudo apt-get install -y wget unzip
           # 특정 버전의 Chrome 설치 (114.0.5735.90)
           wget -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_114.0.5735.90-1_amd64.deb -O google-chrome-stable.deb
-          sudo dpkg -i google-chrome-stable.deb || sudo apt-get -f install -y
+          sudo dpkg -i google-chrome-stable.deb || sudo apt-get -f install -y  # 의존성 해결
           # ChromeDriver 설치 (114.0.5735.90)
           wget -q "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip"
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
           rm google-chrome-stable.deb chromedriver_linux64.zip
 
-      # Chrome 및 ChromeDriver 디버깅 (옵션)
-      - name: Debug Chrome and ChromeDriver
+      # Chrome 및 ChromeDriver 디버깅
+      - name: Debug Chrome Installation
         run: |
-          google-chrome --version
-          chromedriver --version
+          echo "Chrome 버전 확인:"
+          google-chrome --version || echo "Chrome 설치 실패"
+          echo "ChromeDriver 버전 확인:"
+          chromedriver --version || echo "ChromeDriver 설치 실패"
 
       # Selenium 스크립트 실행
       - name: Restart Cloudtype Server
