@@ -1,0 +1,52 @@
+name: Restart Cloudtype
+
+on:
+  schedule:
+    - cron: "0 */23 * * *"  # 매 23시간마다 실행
+
+jobs:
+  restart-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: Install requests library
+        run: pip install requests
+
+      - name: Restart Cloudtype Server
+        env:
+          API_KEY: ${{ secrets.CLOUDTYPE_API_KEY }}
+          PROJECT_ID: ${{ secrets.CLOUDTYPE_PROJECT_ID }}
+        run: |
+          python <<EOF
+          import requests
+          import time
+
+          API_KEY = "${{ secrets.CLOUDTYPE_API_KEY }}"
+          PROJECT_ID = "${{ secrets.CLOUDTYPE_PROJECT_ID }}"
+          BASE_URL = "https://api.cloudtype.io/v1/projects"
+          HEADERS = {"Authorization": f"Bearer {API_KEY}"}
+
+          def restart_cloudtype():
+              stop_url = f"{BASE_URL}/{PROJECT_ID}/stop"
+              stop_response = requests.post(stop_url, headers=HEADERS)
+              if stop_response.status_code == 200:
+                  print("서버 정지 완료")
+              else:
+                  print("서버 정지 실패:", stop_response.text)
+
+              time.sleep(60)  # 서버 종료 후 1분 대기
+
+              start_url = f"{BASE_URL}/{PROJECT_ID}/start"
+              start_response = requests.post(start_url, headers=HEADERS)
+              if start_response.status_code == 200:
+                  print("서버 시작 완료")
+              else:
+                  print("서버 시작 실패:", start_response.text)
+
+          restart_cloudtype()
+          EOF
