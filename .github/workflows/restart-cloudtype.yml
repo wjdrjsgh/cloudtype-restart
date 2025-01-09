@@ -1,55 +1,97 @@
-name: Restart Cloudtype
+name: Restart Cloudtype with Selenium
 
 on:
   schedule:
     - cron: "0 */23 * * *"  # 매 23시간마다 실행
-  workflow_dispatch:  # 수동 실행 옵션 추가
+  workflow_dispatch:  # 수동 실행 옵션
 
 jobs:
-  restart-job:
+  restart-cloudtype:
     runs-on: ubuntu-latest
 
     steps:
+      # Python 환경 설정
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.8"
 
-      - name: Install requests library
-        run: pip install requests
+      # Selenium 및 필요한 패키지 설치
+      - name: Install dependencies
+        run: |
+          pip install selenium
 
+      # Chrome 및 ChromeDriver 설치
+      - name: Install Chrome and ChromeDriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
+          wget -q https://chromedriver.storage.googleapis.com/$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+
+      # Selenium 스크립트 실행
       - name: Restart Cloudtype Server
         env:
-          API_KEY: ${{ secrets.CLOUDTYPE_API_KEY }}
-          PROJECT_ID: ${{ secrets.CLOUDTYPE_PROJECT_ID }}
+          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+          GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
+          PROJECT_URL: "https://app.cloudtype.io/@hoding1023/youtubecloud:main/youtubesummarizer"
         run: |
           python <<EOF
-          import requests
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
+          from selenium.webdriver.chrome.options import Options
           import time
 
-          API_KEY = "${{ secrets.CLOUDTYPE_API_KEY }}"
-          PROJECT_ID = "${{ secrets.CLOUDTYPE_PROJECT_ID }}"
-          BASE_URL = "https://api.cloudtype.io/v1/projects"
-          HEADERS = {"Authorization": f"Bearer {API_KEY}"}
+          # Chrome Headless 모드 설정
+          chrome_options = Options()
+          chrome_options.add_argument("--headless")
+          chrome_options.add_argument("--no-sandbox")
+          chrome_options.add_argument("--disable-dev-shm-usage")
 
-          def restart_cloudtype():
-              # 서버 정지
-              stop_url = f"{BASE_URL}/{PROJECT_ID}/stop"
-              stop_response = requests.post(stop_url, headers=HEADERS)
-              if stop_response.status_code == 200:
-                  print("서버 정지 완료")
-              else:
-                  print(f"서버 정지 실패: {stop_response.text}")
+          # WebDriver 설정
+          driver = webdriver.Chrome(options=chrome_options)
 
-              time.sleep(60)  # 서버 종료 후 1분 대기
+          # Cloudtype 로그인 페이지 열기
+          driver.get("https://app.cloudtype.io/login")
+          time.sleep(3)
 
-              # 서버 시작
-              start_url = f"{BASE_URL}/{PROJECT_ID}/start"
-              start_response = requests.post(start_url, headers=HEADERS)
-              if start_response.status_code == 200:
-                  print("서버 시작 완료")
-              else:
-                  print(f"서버 시작 실패: {start_response.text}")
+          # GitHub 로그인 처리
+          github_login_button = driver.find_element(By.XPATH, "//button[contains(text(), 'GitHub로 로그인')]")
+          github_login_button.click()
+          time.sleep(3)
 
-          restart_cloudtype()
+          # GitHub 로그인 입력
+          driver.find_element(By.ID, "login_field").send_keys("${{ secrets.GIT_USERNAME }}")  # GitHub ID
+          driver.find_element(By.ID, "password").send_keys("${{ secrets.GIT_PASSWORD }}")  # GitHub Password
+          driver.find_element(By.NAME, "commit").click()
+          time.sleep(5)
+
+          # Cloudtype 프로젝트 페이지로 이동
+          driver.get("${{ env.PROJECT_URL }}")
+          time.sleep(5)
+
+          # 정지 버튼 클릭
+          try:
+              stop_button = driver.find_element(By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[2]")
+              stop_button.click()
+              print("서버 정지 완료")
+              time.sleep(3)
+          except Exception as e:
+              print("서버 정지 실패:", e)
+
+          # 시작 버튼 클릭
+          try:
+              start_button = driver.find_element(By.XPATH, "//*[@id='page']/div/div[2]/div/div/div[2]/div[2]/div/a[1]")
+              start_button.click()
+              print("서버 시작 완료")
+              time.sleep(3)
+          except Exception as e:
+              print("서버 시작 실패:", e)
+
+          # 브라우저 종료
+          driver.quit()
           EOF
