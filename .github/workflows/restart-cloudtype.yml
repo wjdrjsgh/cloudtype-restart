@@ -1,54 +1,48 @@
-name: Restart Cloudtype with Selenium
+- name: Restart Cloudtype Server
+  env:
+    GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+    GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
+  run: |
+    python <<EOF
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    from selenium import webdriver
+    import time
 
-on:
-  schedule:
-    - cron: "0 */23 * * *"  # 매 23시간마다 실행
-  workflow_dispatch:  # 수동 실행 옵션
+    # Chrome 옵션 설정
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
-jobs:
-  restart-cloudtype:
-    runs-on: ubuntu-latest
+    # WebDriver 설정
+    driver = webdriver.Chrome(options=chrome_options)
 
-    steps:
-      # Python 환경 설정
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
+    try:
+        print("Selenium 스크립트 실행 시작")
+        # GitHub 로그인
+        driver.get("https://github.com/login")
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "login_field"))).send_keys("${GIT_USERNAME}")
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "password"))).send_keys("${GIT_PASSWORD}")
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.NAME, "commit"))).click()
+        print("GitHub 로그인 완료")
 
-      # Selenium 및 필요한 패키지 설치
-      - name: Install dependencies
-        run: |
-          pip install selenium
+        # Cloudtype 로그인
+        driver.get("https://app.cloudtype.io/auth/signin?redirect=/")
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'GitHub로 로그인')]"))).click()
+        print("Cloudtype 로그인 완료")
 
-      # Chrome 및 ChromeDriver 설치
-      - name: Install Specific Chrome and ChromeDriver
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          # 특정 버전의 Chrome 설치 (114.0.5735.90)
-          wget -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_114.0.5735.90-1_amd64.deb -O google-chrome-stable.deb
-          sudo dpkg -i google-chrome-stable.deb || sudo apt-get -f install -y  # 의존성 해결
-          # ChromeDriver 설치 (114.0.5735.90)
-          wget -q "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip"
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          rm google-chrome-stable.deb chromedriver_linux64.zip
-
-      # Chrome 및 ChromeDriver 디버깅
-      - name: Debug Chrome Installation
-        run: |
-          echo "Chrome 버전 확인:"
-          google-chrome --version || echo "Chrome 설치 실패"
-          echo "ChromeDriver 버전 확인:"
-          chromedriver --version || echo "ChromeDriver 설치 실패"
-
-      # Selenium 스크립트 실행
-      - name: Restart Cloudtype Server
-        env:
-          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
-          GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
-        run: |
-          python <<EOF
-          # Selenium 스크립트 삽입
-          EOF
+        # Cloudtype 앱 정지 및 시작
+        driver.get("https://app.cloudtype.io/@hoding1023/youtubecloud:main/youtubesummarizer")
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//a[text()='정지']"))).click()
+        print("앱 정지 완료")
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//a[text()='시작']"))).click()
+        print("앱 시작 완료")
+    except Exception as e:
+        print(f"오류 발생: {e}")
+    finally:
+        driver.quit()
+        print("Selenium 스크립트 실행 종료")
+    EOF
